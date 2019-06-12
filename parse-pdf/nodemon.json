@@ -1,0 +1,6 @@
+{
+    "ignore": [".git", "node_modules/**/node_modules", "*.json"],
+    "verbose": false,
+    "watch": ["index.js"],
+    "ext": "js"
+}
