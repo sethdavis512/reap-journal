@@ -2,7 +2,6 @@ import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import * as utils from '../utils/utilFunctions';
-import format from 'date-fns/format';
 
 function DateList({ dates, current, handleChange }) {
     return dates.map((date, index) => {
