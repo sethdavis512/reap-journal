@@ -19,8 +19,8 @@ body {
     flex-wrap: wrap;
 }
 
-.calendar .tag {
-    flex-basis: 0;
+.calendar button.button {
+    flex-basis: 45%;
     flex-grow: 1;
     cursor: pointer;
     margin: 0.2rem;
@@ -32,6 +32,6 @@ button.is-small.is-active {
     color: white;
 }
 
-.tag.has-entries {
+.has-entries {
     background-color: #c2c2c2;
 }

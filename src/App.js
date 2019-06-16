@@ -11,7 +11,8 @@ import DateList from './components/DateList';
 import * as utils from './utils/utilFunctions';
 
 export default function App() {
-    const today = format(new Date(), 'MM-DD-YYYY');
+    const todayObj = new Date();
+    const today = format(todayObj, 'MM-DD-YYYY');
     const [currentDate, setCurrentDate] = useState(today);
     const [currentRef, setCurrentRef] = useState('');
     const [scripture, setScripture] = useState('');
@@ -81,7 +82,7 @@ export default function App() {
     }
 
     const dateArr = utils.keysToArray(plan);
-    const fullDate = format(currentDate, 'MMMM D, YYYY');
+    const fullDate = format(todayObj, 'MMMM D, YYYY');
 
     return (
         <div className="columns is-centered">
