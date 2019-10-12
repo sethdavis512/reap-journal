@@ -9,12 +9,14 @@ import TextArea from './components/TextArea';
 import ButtonBar from './components/ButtonBar';
 import DateList from './components/DateList';
 import * as utils from './utils/utilFunctions';
+import throttle from 'lodash/throttle';
 
 export default function App() {
+    const REAP = 'REAP';
     const todayObj = new Date();
     const today = format(todayObj, 'MM-DD-YYYY');
     const [currentDate, setCurrentDate] = useState(today);
-    const [currentRef, setCurrentRef] = useState('');
+    const [currentScrRef, setCurrentScrRef] = useState('');
     const [scripture, setScripture] = useState('');
     const blankReap = {
         read: '',
@@ -22,20 +24,23 @@ export default function App() {
         apply: '',
         pray: ''
     };
-    const storedReap = utils.getLocalStorage(today);
-    const initialReap = (storedReap && storedReap[currentRef]) || blankReap;
+    const storedReap = utils.getLocalStorage(REAP);
+    const initialReap =
+        utils.getSafe(() => storedReap[currentDate][currentScrRef]) ||
+        blankReap;
     const [reap, setReap] = useState(initialReap);
     const [loadingState, setLoadingState] = useState(false);
+    const altCurrentDate = currentDate.substring(0, 5);
 
     useEffect(() => {
-        setCurrentRef(plan[currentDate][0]);
-    }, [currentDate]);
+        setCurrentScrRef(plan[altCurrentDate][0]);
+    }, [altCurrentDate]);
 
     useEffect(() => {
         const fetch = async () => {
             const response = await utils.axiosInstance(
                 `?q=${encodeURIComponent(
-                    currentRef
+                    currentScrRef
                 )}&include-passage-references=false&include-footnotes=false&include-footnote-body=false`
             );
             const [fetchedScripture] = response.data.passages;
@@ -43,39 +48,49 @@ export default function App() {
             setLoadingState(false);
         };
 
-        if (currentRef) {
+        if (currentScrRef) {
             setLoadingState(true);
             fetch();
         }
 
-        const storedDailyReap = utils.getLocalStorage(currentDate);
+        const storedDailyReap = utils.getLocalStorage(REAP);
         const storedReap =
-            (storedDailyReap && storedDailyReap[currentRef]) || blankReap;
+            utils.getSafe(() => storedDailyReap[currentDate][currentScrRef]) ||
+            blankReap;
 
         setReap(storedReap);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentRef]);
+    }, [currentScrRef]);
 
     useEffect(() => {
-        const storedDailyReap = utils.getLocalStorage(currentDate) || {};
-        const dailyReap = {
-            ...storedDailyReap,
-            [currentRef]: reap
-        };
-        if (currentRef) utils.setLocalStorage(currentDate, dailyReap);
+        const entireReapFromLocalStorage =
+            utils.getSafe(() => utils.getLocalStorage(REAP)) || {};
+        const storedDailyReap = entireReapFromLocalStorage[currentDate] || {};
+        if (storedDailyReap && currentScrRef) {
+            const dailyReap = {
+                ...entireReapFromLocalStorage,
+                [currentDate]: {
+                    ...storedDailyReap,
+                    [currentScrRef]: reap
+                }
+            };
+            utils.setLocalStorage(REAP, dailyReap);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reap]);
+    }, [reap.read, reap.examine, reap.apply, reap.pray]);
 
     function handleDayChange(e) {
-        setCurrentDate(e.target.dataset.date);
+        setCurrentDate(e.target.value);
     }
+
+    const throttledSetReap = throttle(setReap, 5000);
 
     function handleTextChange(e) {
         const text = e.target.value;
         const name = e.target.name;
 
         const entry = { [name]: text };
-        setReap({
+        throttledSetReap({
             ...reap,
             ...entry
         });
@@ -88,26 +103,24 @@ export default function App() {
         <div className="columns is-centered">
             <div className="column is-10">
                 <div className="columns scroll-parent">
-                    <div className="column is-2 scroll-child calendar">
+                    <div className="column is-8 scroll-child">
                         <DateList
                             dates={dateArr}
-                            current={currentDate}
+                            current={altCurrentDate}
                             handleChange={handleDayChange}
                         />
-                    </div>
-                    <div className="column is-6 scroll-child">
                         <p>
                             <strong>{fullDate}</strong>
                         </p>
                         <h3 className="title is-3">Scripture</h3>
                         <ButtonBar
-                            currentRef={currentRef}
-                            setCurrentRef={setCurrentRef}
-                            items={plan[currentDate]}
+                            currentScrRef={currentScrRef}
+                            setCurrentScrRef={setCurrentScrRef}
+                            items={plan[altCurrentDate]}
                         />
                         <hr />
                         <div className="content">
-                            <h6 className="title is-6">{currentRef}</h6>
+                            <h6 className="title is-6">{currentScrRef}</h6>
                             {loadingState ? (
                                 <FontAwesomeIcon
                                     icon={faCircleNotch}
